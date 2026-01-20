@@ -1,0 +1,33 @@
+# =============================================================================
+# INGRESSCLASS FOR NGINX
+# =============================================================================
+# IngressClass tells Kubernetes which Ingress Controller handles
+# which Ingress resources.
+#
+# You could have multiple controllers:
+# - nginx for general web traffic
+# - traefik for specific apps
+# - kong for API gateway
+#
+# Each Ingress specifies: ingressClassName: nginx
+# Only the matching controller will process it
+#
+# is-default-class annotation:
+# - If set to "true", Ingresses without ingressClassName use this
+# - Only ONE IngressClass should be default
+# =============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/component: controller
+  annotations:
+    # Make this the default IngressClass
+    ingressclass.kubernetes.io/is-default-class: "true"
+spec:
+  # This must match the --controller-class argument in the DaemonSet
+  controller: k8s.io/ingress-nginx

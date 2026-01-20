@@ -1,0 +1,136 @@
+# =============================================================================
+# RBAC FOR NGINX INGRESS CONTROLLER
+# =============================================================================
+# RBAC = Role-Based Access Control
+# Defines WHAT the controller is allowed to do in the cluster
+#
+# Two types:
+# - ClusterRole/ClusterRoleBinding: Cluster-wide permissions
+# - Role/RoleBinding: Namespace-specific permissions
+# =============================================================================
+
+---
+# ClusterRole: Permissions across ALL namespaces
+# The controller needs to see Ingresses in any namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ingress-nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/instance: ingress-nginx
+rules:
+  # Watch configuration resources
+  - apiGroups: [""]
+    resources: ["configmaps", "endpoints", "nodes", "pods", "secrets", "namespaces"]
+    verbs: ["list", "watch"]
+  
+  # Read nodes (for topology awareness)
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get"]
+  
+  # Read/Watch services (backends for ingress)
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch"]
+  
+  # Read/Watch Ingress resources (the main job!)
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch"]
+  
+  # Update Ingress status (set load balancer IP)
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses/status"]
+    verbs: ["update"]
+  
+  # Read IngressClass
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingressclasses"]
+    verbs: ["get", "list", "watch"]
+  
+  # Events (for debugging - controller logs events)
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+  
+  # Discovery API
+  - apiGroups: ["discovery.k8s.io"]
+    resources: ["endpointslices"]
+    verbs: ["list", "watch", "get"]
+  
+  # Coordination (leader election)
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["list", "watch"]
+
+---
+# ClusterRoleBinding: Connect ServiceAccount to ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ingress-nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/instance: ingress-nginx
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ingress-nginx
+subjects:
+  - kind: ServiceAccount
+    name: ingress-nginx
+    namespace: ingress-nginx
+
+---
+# Role: Permissions within ingress-nginx namespace only
+# Some resources only need namespace-level access
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ingress-nginx
+  namespace: ingress-nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/instance: ingress-nginx
+rules:
+  # ConfigMaps for nginx configuration
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "create", "update"]
+  
+  # Controller needs to read its own pod
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get"]
+  
+  # Leader election uses ConfigMap or Lease
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["ingress-nginx-leader"]
+    verbs: ["get", "update"]
+  
+  # Coordination for leader election
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "create", "update"]
+
+---
+# RoleBinding: Connect ServiceAccount to Role (namespace-scoped)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ingress-nginx
+  namespace: ingress-nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/instance: ingress-nginx
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: ingress-nginx
+subjects:
+  - kind: ServiceAccount
+    name: ingress-nginx
+    namespace: ingress-nginx

@@ -1,0 +1,67 @@
+# =============================================================================
+# SERVICE FOR NGINX INGRESS CONTROLLER
+# =============================================================================
+# Even with hostNetwork, we create a Service for:
+# 1. Internal DNS: Other pods can reach ingress-nginx-controller.ingress-nginx
+# 2. Metrics endpoint: Prometheus can scrape via service
+# 3. Status updates: Controller updates Ingress resources with this service
+#
+# This is a headless-style ClusterIP service since actual traffic
+# goes directly to node IPs via hostNetwork
+# =============================================================================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-nginx-controller
+  namespace: ingress-nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/component: controller
+spec:
+  type: ClusterIP
+  
+  selector:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/component: controller
+  
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+    - name: https
+      port: 443
+      targetPort: https
+      protocol: TCP
+    - name: metrics
+      port: 10254
+      targetPort: metrics
+      protocol: TCP
+
+---
+# =============================================================================
+# SERVICE FOR METRICS (for Prometheus ServiceMonitor)
+# =============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-nginx-metrics
+  namespace: ingress-nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/component: controller
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/component: controller
+  ports:
+    - name: metrics
+      port: 10254
+      targetPort: metrics
+      protocol: TCP
