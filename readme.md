@@ -348,31 +348,3 @@ kubectl get pods -n <your-app-namespace>
 kubectl get endpoints -n <your-app-namespace>
 ```
 
----
-
-## What Files to Convert to .sh Later
-
-```bash
-#!/bin/bash
-# 15-install-nginx-ingress.sh
-set -e
-
-echo "=== Installing NGINX Ingress Controller ==="
-
-kubectl apply -f manifests/nginx-ingress/
-
-echo "=== Waiting for pods ==="
-kubectl wait --namespace ingress-nginx \
-  --for=condition=Ready pod \
-  --selector=app.kubernetes.io/component=controller \
-  --timeout=120s
-
-echo "=== Verifying ==="
-kubectl get pods -n ingress-nginx -o wide
-kubectl get ingressclass
-
-echo "=== NGINX Ingress installed successfully ==="
-```
-
----
-
