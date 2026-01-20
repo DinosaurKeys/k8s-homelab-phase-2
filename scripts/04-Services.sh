@@ -1,4 +1,4 @@
 #!/bin/bash
-Services
+#Services
 
-kubectl apply -f k8s-homelab-phase-2/manifests/05-service.yaml
+kubectl apply -f manifests/ingress-nginx/05-service.yaml
