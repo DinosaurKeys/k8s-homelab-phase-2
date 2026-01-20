@@ -1,4 +1,4 @@
-#!bin/bash
+#!/bin/bash
 
-kubectl apply -f labs/01-ingress-nginx/01-manifests/06-ingressclass.yaml
+kubectl apply -f manifests/ingress-nginx/06-ingressclass.yaml
 

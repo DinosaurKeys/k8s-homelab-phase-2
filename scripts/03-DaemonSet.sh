@@ -1,3 +1,3 @@
 #!/bin/bash
 
-kubectl apply -f k8s-homelab-phase-2/manifests/04-daemonset.yaml
+kubectl apply -f manifests/ingress-nginx/04-daemonset.yaml
